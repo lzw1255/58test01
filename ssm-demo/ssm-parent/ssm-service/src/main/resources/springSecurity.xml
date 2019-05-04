@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <!--
+        1, 忽略安全校验的路径(例如图片, 登录页)
+        pattern="/images/**" 表示指定配置安全策略的路径
+        security="none" 指定安全策略, none:表示不采取任何策略
+    -->
+    <security:http pattern="/css/**" security="none" />
+    <security:http pattern="/images/**" security="none" />
+    <security:http pattern="/img/**" security="none" />
+    <security:http pattern="/plugins/**" security="none" />
+    <security:http pattern="/403.jsp" security="none" />
+    <security:http pattern="/404.jsp" security="none" />
+    <security:http pattern="/500.jsp" security="none" />
+    <security:http pattern="/failer.jsp" security="none" />
+    <security:http pattern="/login.jsp" security="none" />
+
+    <!--
+        2, 受访问限制的路径安全配置策略
+        auto-config="true"自动配置, 会自动配置SpringSecurity相关功能组件, 以及登录配置, 以及登录处理配置
+        use-expressions="false"
+    -->
+    <security:http auto-config="true" use-expressions="false">
+        <!--
+            指定需要对应角色访问的路径的安全配置
+            pattern="/**": 表示被拦截的路径
+            access="ROLE_ADMIN": 上面被拦截的路径允许指定角色访问, ROLE_:固定写法
+            pattern="/**" access="ROLE_ADMIN": 其他任何路径, 都需要用户是ROLE_ADMIN角色才能访问
+        -->
+        <security:intercept-url pattern="/**" access="ROLE_ADMIN"/>
+
+        <!--
+            自定义登录
+            指定登录页面:login-page="/login.html"
+            登录成功跳转页:default-target-url="/welcome.html"
+            登陆后,始终跳转到欢迎页:always-use-default-target="true"
+            登陆失败跳转页面:authentication-failure-url="/fail.html"
+            指定登录处理路径(SpringSecurity内置路径):login-processing-url="/login"
+        -->
+        <security:form-login
+                login-page="/login.jsp"
+                default-target-url="/pages/main.jsp"
+                always-use-default-target="true"
+                authentication-failure-url="/login.jsp"
+                login-processing-url="/login"
+        />
+
+        <!--禁用CSRF-->
+        <security:csrf disabled="true" />
+
+        <!--
+            自定义登出
+            登出后跳转地址:logout-success-url="/login.html"
+            登出处理地址(SpringSecurity内置地址):logout-url="/logout"
+            让Session元素无效:invalidate-session="true"
+        -->
+        <security:logout
+                logout-success-url="/login.jsp"
+                logout-url="/logout"
+                invalidate-session="true"
+        />
+
+    </security:http>
+
+    <!--定义加密算法-->
+    <bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+    <!--3, 授权认证管理, 指定对应的账号, 并授予对应的角色-->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="sysUserServiceImpl">
+            <!--指定加密对象-->
+            <security:password-encoder ref="encoder"/>
+        </security:authentication-provider>
+
+    </security:authentication-manager>
+</beans>
